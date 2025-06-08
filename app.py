@@ -561,34 +561,22 @@ def create_correlation_analysis(df, channels, analysis_period):
                 showarrow=False,
                 font=dict(
                     color="white" if abs(corr_matrix.iloc[i, j]) > 0.5 else "black",
-                    size=14  # 상관계수 폰트 크기 증가
+                    size=14
                 )
             )
     
     fig.update_layout(
         height=400,
         xaxis=dict(
-            tickfont=dict(size=12)  # X축 폰트 크기 증가
+            tickfont=dict(size=12)
         ),
         yaxis=dict(
-            tickfont=dict(size=12)  # Y축 폰트 크기 증가
+            tickfont=dict(size=12)
         ),
-        font=dict(size=12)  # 전체 폰트 크기 증가
+        font=dict(size=12)
     )
     
     # 모든 상관관계 수치를 담은 데이터프레임 생성
-    corr_pairs = []
-    for i in range(len(channels)):
-        for j in range(i+1, len(channels)):
-            corr_pairs.append({
-                '방송사 1': channels[i],
-                '방송사 2': channels[j],
-                '상관계수': round(corr_matrix.iloc[i, j], 3)
-            })
-    
-    corr_df = pd.DataFrame(corr_pairs).sort_values('상관계수', key=abs, ascending=False)
-    
-    return fig, corr_df성
     corr_pairs = []
     for i in range(len(channels)):
         for j in range(i+1, len(channels)):
@@ -845,13 +833,6 @@ if channels and not filtered_df.empty:
         st.subheader(f"🔸 {rating_type} 시청률 분포 산점도 ({day_type})")
         fig = create_scatter_chart(filtered_df, channels, CHANNELS)
         st.plotly_chart(fig, use_container_width=True)
-        
-        # 차트 조작 가이드
-        with st.expander("📖 차트 조작 가이드"):
-            st.markdown("**📊 하단 범위 슬라이더:**")
-            st.markdown("- 슬라이더 양 끝을 **드래그**하여 표시 범위 조정")
-            st.markdown("- 슬라이더 중앙 부분을 **드래그**하여 좌우 이동")
-            st.markdown("- 더블클릭으로 전체 범위 표시")
         
     elif chart_type == "요일별 시청률 비교":
         st.subheader(f"📊 {rating_type} 요일별 시청률 비교")
