@@ -82,7 +82,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📺 종편 4사 주중 메인 시청률 대시보드")
+st.title("📺 종편 4사 메인시청률 대시보드")
 st.markdown("---")
 
 # 데이터 로딩 함수
@@ -216,7 +216,7 @@ def filter_by_day_type(df, day_type):
         return df[df['weekday'].isin([0, 1, 2, 3, 4])]  # 월~금
     elif day_type == "주말":
         return df[df['weekday'].isin([5, 6])]  # 토,일
-    else:  # "전체"
+    else:  # "(주중+주말)"
         return df
 
 # 방송사별 색상
@@ -532,12 +532,18 @@ def create_weekday_chart(df, channels, CHANNELS, period_type="전체"):
     return fig
 
 # 스테이션별 상관관계
-def create_correlation_analysis(df, channels, analysis_period):
+def create_correlation_analysis(df, channels, analysis_period=None, custom_analysis_dates=None):
     # 분석 기간에 따른 데이터 필터링
-    if analysis_period != "전체":
+    if custom_analysis_dates:
+        start_date, end_date = custom_analysis_dates
+        recent_data = df[(df['date'] >= start_date) & (df['date'] <= end_date)]
+        period_text = f"{start_date.strftime('%y.%m.%d')}~{end_date.strftime('%y.%m.%d')}"
+    elif analysis_period != "전체":
         recent_data = df.tail(analysis_period)
+        period_text = f"{analysis_period}일 기준"
     else:
         recent_data = df
+        period_text = "전체 기간"
     
     # 상관관계 계산
     corr_matrix = recent_data[channels].corr()
@@ -549,7 +555,7 @@ def create_correlation_analysis(df, channels, analysis_period):
         y=channels,
         color_continuous_scale='RdBu',
         aspect='auto',
-        title=f"스테이션별 시청률 상관관계 ({analysis_period}일 기준)" if analysis_period != "전체" else "스테이션별 시청률 상관관계 (전체 기간)"
+        title=f"스테이션별 시청률 상관관계 ({period_text})"
     )
     
     # 상관계수 텍스트 추가
@@ -620,7 +626,7 @@ with st.sidebar:
     st.subheader("📅 요일 선택")
     day_type = st.radio(
         "분석할 요일을 선택하세요:",
-        ["주중", "주말", "전체(주중+주말)"],
+        ["주중", "주말", "(주중+주말)"],
         index=0,
         help="주중: 월~금, 주말: 토~일"
     )
@@ -736,11 +742,50 @@ with st.sidebar:
         
     elif chart_type == "스테이션별 상관관계":
         st.subheader("📊 분석 옵션")
-        analysis_period = st.selectbox(
-            "분석 기간:",
-            ["전체", 30, 90, 180],
-            index=0
-        )
+        
+        # 날짜 범위 직접 선택 옵션 먼저 확인
+        use_custom_analysis_dates = st.checkbox("분석 기간 직접 선택")
+        
+        analysis_period = None
+        custom_analysis_dates = None
+        
+        if use_custom_analysis_dates:
+            # 직접 선택 모드
+            st.markdown("**직접 분석 기간 선택:**")
+            min_date = loading_info['date_range'][0].date()
+            max_date = loading_info['date_range'][1].date()
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                analysis_start_date = st.date_input(
+                    "분석 시작일",
+                    value=max_date - timedelta(days=90),
+                    min_value=min_date,
+                    max_value=max_date,
+                    key="analysis_start"
+                )
+            with col2:
+                analysis_end_date = st.date_input(
+                    "분석 종료일",
+                    value=max_date,
+                    min_value=min_date,
+                    max_value=max_date,
+                    key="analysis_end"
+                )
+            
+            # 선택한 날짜가 데이터 범위를 벗어나는지 확인
+            if analysis_start_date < min_date or analysis_end_date > max_date or analysis_start_date > analysis_end_date:
+                st.error("❌ 보유하지 않은 데이터 범위입니다.")
+                custom_analysis_dates = None
+            else:
+                custom_analysis_dates = (pd.Timestamp(analysis_start_date), pd.Timestamp(analysis_end_date))
+        else:
+            # 기본 선택 모드
+            analysis_period = st.selectbox(
+                "분석 기간:",
+                ["전체", 30, 90, 180],
+                index=0
+            )
     
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("---")
@@ -838,8 +883,8 @@ if channels and not filtered_df.empty:
         st.subheader(f"📊 {rating_type} 요일별 시청률 비교")
         if channels:
             # 주중/주말 필터링이 적용된 상태에서는 요일별 분석이 제한적일 수 있음을 알림
-            if day_type != "전체(주중+주말)":
-                st.info(f"현재 {day_type} 데이터만 분석 중입니다. 전체 요일 패턴을 보려면 '전체(주중+주말)'을 선택하세요.")
+            if day_type != "(주중+주말)":
+                st.info(f"현재 {day_type} 데이터만 분석 중입니다. 전체 요일 패턴을 보려면 '(주중+주말)'을 선택하세요.")
             
             # 원본 데이터를 사용 (요일별 분석은 전체 데이터 기준)
             fig = create_weekday_chart(df, channels, CHANNELS, period_type)
@@ -932,44 +977,52 @@ if channels and not filtered_df.empty:
     elif chart_type == "스테이션별 상관관계":
         st.subheader(f"🌈 {rating_type} 스테이션별 상관관계 ({day_type})")
         if len(channels) >= 2:
-            fig, corr_df = create_correlation_analysis(filtered_df, channels, analysis_period)
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # 상관관계 해석
-            st.markdown("### 📋 스테이션별 상관관계 수치")
-            
-            col1, col2 = st.columns([2, 1])
-            
-            with col1:
-                st.markdown("**📊 모든 방송사 간 상관관계**")
+            if use_custom_analysis_dates and custom_analysis_dates:
+                fig, corr_df = create_correlation_analysis(filtered_df, channels, custom_analysis_dates=custom_analysis_dates)
+            elif analysis_period:
+                fig, corr_df = create_correlation_analysis(filtered_df, channels, analysis_period)
+            else:
+                st.warning("분석 기간을 선택해주세요.")
+                fig, corr_df = None, None
                 
-                # 상관관계 강도별 색상 표시
-                def get_correlation_color(corr_val):
-                    abs_corr = abs(corr_val)
-                    if abs_corr >= 0.7:
-                        return "🟢"  # 매우 강함
-                    elif abs_corr >= 0.5:
-                        return "🟡"  # 강함
-                    elif abs_corr >= 0.3:
-                        return "🟠"  # 보통
-                    else:
-                        return "🔴"  # 약함
+            if fig is not None:
+                st.plotly_chart(fig, use_container_width=True)
                 
-                for _, row in corr_df.iterrows():
-                    color_indicator = get_correlation_color(row['상관계수'])
-                    st.markdown(f"{color_indicator} **{row['방송사 1']}** ↔ **{row['방송사 2']}**: {row['상관계수']}")
-                        
-            with col2:
-                st.markdown("**📊 상관관계 강도 기준**")
-                st.markdown("🟢 0.7 이상: 매우 강한 연관성")
-                st.markdown("🟡 0.5~0.7: 강한 연관성") 
-                st.markdown("🟠 0.3~0.5: 보통 연관성")
-                st.markdown("🔴 0.3 미만: 약한 연관성")
+                # 상관관계 해석
+                st.markdown("### 📋 스테이션별 상관관계 수치")
                 
-                st.markdown("**💡 해석 가이드**")
-                st.markdown("- 양수: 같은 방향으로 변화")
-                st.markdown("- 음수: 반대 방향으로 변화")
-                st.markdown("- 절댓값이 클수록 연관성 강함")
+                col1, col2 = st.columns([2, 1])
+                
+                with col1:
+                    st.markdown("**📊 모든 방송사 간 상관관계**")
+                    
+                    # 상관관계 강도별 색상 표시
+                    def get_correlation_color(corr_val):
+                        abs_corr = abs(corr_val)
+                        if abs_corr >= 0.7:
+                            return "🟢"  # 매우 강함
+                        elif abs_corr >= 0.5:
+                            return "🟡"  # 강함
+                        elif abs_corr >= 0.3:
+                            return "🟠"  # 보통
+                        else:
+                            return "🔴"  # 약함
+                    
+                    for _, row in corr_df.iterrows():
+                        color_indicator = get_correlation_color(row['상관계수'])
+                        st.markdown(f"{color_indicator} **{row['방송사 1']}** ↔ **{row['방송사 2']}**: {row['상관계수']}")
+                            
+                with col2:
+                    st.markdown("**📊 상관관계 강도 기준**")
+                    st.markdown("🟢 0.7 이상: 매우 강한 연관성")
+                    st.markdown("🟡 0.5~0.7: 강한 연관성") 
+                    st.markdown("🟠 0.3~0.5: 보통 연관성")
+                    st.markdown("🔴 0.3 미만: 약한 연관성")
+                    
+                    st.markdown("**💡 해석 가이드**")
+                    st.markdown("- 양수: 같은 방향으로 변화")
+                    st.markdown("- 음수: 반대 방향으로 변화")
+                    st.markdown("- 절댓값이 클수록 연관성 강함")
         else:
             st.warning("상관관계 분석을 위해 최소 2개 방송사를 선택해주세요.")
 
