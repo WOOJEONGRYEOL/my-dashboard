@@ -271,8 +271,9 @@ def create_moving_average_chart(df, channels, periods, CHANNELS):
                         mode='lines',
                         name=f'{CHANNELS[channel]["name"]} {period}일',
                         line=dict(color=CHANNELS[channel]["color"], **line_style),
-                        hovertemplate=f'<b>{CHANNELS[channel]["name"]} ({period}일 MA)</b><br>' +
-                                    '날짜: %{x|%Y년 %m월 %d일}<br>시청률: %{y:.2f}%<extra></extra>'
+                        hovertemplate=f'<b>%{{x|%y.%m.%d}}</b><br>' +
+                                    f'<b>{CHANNELS[channel]["name"]} ({period}일 MA)</b><br>' +
+                                    '시청률: <b>%{y:.2f}%</b><extra></extra>'
                     ))
     
     fig.update_layout(
@@ -285,8 +286,13 @@ def create_moving_average_chart(df, channels, periods, CHANNELS):
             dtick="M1",  # 1달 간격
             tickformat="%y.%m",  # yy.mm 형식
             type="date",
-            rangeslider=dict(visible=False)  # 스크롤바 완전 제거
-        )
+            rangeslider=dict(visible=False),  # 스크롤바 완전 제거
+            tickfont=dict(size=14)  # X축 폰트 크기 증가
+        ),
+        yaxis=dict(
+            tickfont=dict(size=14)  # Y축 폰트 크기 증가
+        ),
+        font=dict(size=12)  # 전체 폰트 크기 증가
     )
     
     return fig
@@ -363,8 +369,9 @@ def create_period_comparison_chart(df, channels, CHANNELS, comparison_type="최�
                 opacity=0.6,
                 legendgroup=channel,
                 offsetgroup=i,
-                text=f'{prev_val:.2f}%',
-                textposition='outside'
+                text=f'<b>{prev_val:.2f}%</b>',
+                textposition='outside',
+                textfont=dict(size=16)  # 시청률 수치 폰트 크기 증가
             ))
             
             # 현재 막대 (증감 표시를 위에 배치)
@@ -376,9 +383,9 @@ def create_period_comparison_chart(df, channels, CHANNELS, comparison_type="최�
                 opacity=1.0,
                 legendgroup=channel,
                 offsetgroup=i,
-                text=f'{curr_val:.2f}% <span style="color:{"red" if diff < 0 else "green"};">{diff_text}</span>',
+                text=f'<b>{curr_val:.2f}%</b> <span style="color:{"red" if diff < 0 else "green"}; font-size:14px;">{diff_text}</span>',
                 textposition='outside',
-                textfont=dict(size=11)
+                textfont=dict(size=16)  # 시청률 수치 폰트 크기 증가
             ))
     
     fig.update_layout(
@@ -387,7 +394,14 @@ def create_period_comparison_chart(df, channels, CHANNELS, comparison_type="최�
         xaxis_title="기간",
         yaxis_title="시청률 (%)",
         barmode='group',
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        xaxis=dict(
+            tickfont=dict(size=14)  # X축 폰트 크기 증가
+        ),
+        yaxis=dict(
+            tickfont=dict(size=14)  # Y축 폰트 크기 증가
+        ),
+        font=dict(size=12)  # 전체 폰트 크기 증가
     )
     
     return fig
@@ -409,8 +423,9 @@ def create_scatter_chart(df, channels, CHANNELS):
                     size=6,
                     opacity=0.7
                 ),
-                hovertemplate=f'<b>{CHANNELS[channel]["name"]}</b><br>' +
-                            '날짜: %{x}<br>시청률: %{y:.2f}%<extra></extra>'
+                hovertemplate=f'<b>%{{x|%y.%m.%d}}</b><br>' +
+                            f'<b>{CHANNELS[channel]["name"]}</b><br>' +
+                            '시청률: <b>%{y:.2f}%</b><extra></extra>'
             ))
     
     fig.update_layout(
@@ -424,8 +439,13 @@ def create_scatter_chart(df, channels, CHANNELS):
             dtick="M1",  # 1달 간격
             tickformat="%y.%m",  # yy.mm 형식
             type="date",
-            rangeslider=dict(visible=False)  # 스크롤바 완전 제거
-        )
+            rangeslider=dict(visible=False),  # 스크롤바 완전 제거
+            tickfont=dict(size=14)  # X축 폰트 크기 증가
+        ),
+        yaxis=dict(
+            tickfont=dict(size=14)  # Y축 폰트 크기 증가
+        ),
+        font=dict(size=12)  # 전체 폰트 크기 증가
     )
     
     return fig
@@ -481,8 +501,9 @@ def create_weekday_chart(df, channels, CHANNELS, period_type="전체"):
                 y=y_values,
                 name=CHANNELS[channel]['name'],
                 marker_color=CHANNELS[channel]['color'],
-                text=[f'{val:.2f}%' for val in y_values],
-                textposition='outside'
+                text=[f'<b>{val:.2f}%</b>' for val in y_values],
+                textposition='outside',
+                textfont=dict(size=14)  # 막대 위 텍스트 폰트 크기 증가
             ))
     
     fig.update_layout(
@@ -491,7 +512,14 @@ def create_weekday_chart(df, channels, CHANNELS, period_type="전체"):
         xaxis_title="요일",
         yaxis_title="시청률 (%)",
         barmode='group',
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        xaxis=dict(
+            tickfont=dict(size=14)  # X축 폰트 크기 증가
+        ),
+        yaxis=dict(
+            tickfont=dict(size=14)  # Y축 폰트 크기 증가
+        ),
+        font=dict(size=12)  # 전체 폰트 크기 증가
     )
     
     return fig
@@ -522,14 +550,38 @@ def create_correlation_analysis(df, channels, analysis_period):
         for j in range(len(channels)):
             fig.add_annotation(
                 x=j, y=i,
-                text=f"{corr_matrix.iloc[i, j]:.2f}",
+                text=f"<b>{corr_matrix.iloc[i, j]:.2f}</b>",
                 showarrow=False,
-                font=dict(color="white" if abs(corr_matrix.iloc[i, j]) > 0.5 else "black")
+                font=dict(
+                    color="white" if abs(corr_matrix.iloc[i, j]) > 0.5 else "black",
+                    size=14  # 상관계수 폰트 크기 증가
+                )
             )
     
-    fig.update_layout(height=400)
+    fig.update_layout(
+        height=400,
+        xaxis=dict(
+            tickfont=dict(size=12)  # X축 폰트 크기 증가
+        ),
+        yaxis=dict(
+            tickfont=dict(size=12)  # Y축 폰트 크기 증가
+        ),
+        font=dict(size=12)  # 전체 폰트 크기 증가
+    )
     
     # 모든 상관관계 수치를 담은 데이터프레임 생성
+    corr_pairs = []
+    for i in range(len(channels)):
+        for j in range(i+1, len(channels)):
+            corr_pairs.append({
+                '방송사 1': channels[i],
+                '방송사 2': channels[j],
+                '상관계수': round(corr_matrix.iloc[i, j], 3)
+            })
+    
+    corr_df = pd.DataFrame(corr_pairs).sort_values('상관계수', key=abs, ascending=False)
+    
+    return fig, corr_df성
     corr_pairs = []
     for i in range(len(channels)):
         for j in range(i+1, len(channels)):
@@ -731,17 +783,6 @@ if channels and not filtered_df.empty:
         st.subheader(f"📈 {rating_type} 이동평균선 ({day_type})")
         fig = create_moving_average_chart(filtered_df, channels, periods, CHANNELS)
         st.plotly_chart(fig, use_container_width=True)
-        
-        # 차트 조작 가이드
-        with st.expander("📖 차트 조작 가이드"):
-            total_days = (filtered_df['date'].max() - filtered_df['date'].min()).days
-            if total_days > 540:
-                st.markdown("**📊 하단 화이트 스크롤바:**")
-                st.markdown("- 스크롤바를 **좌우로 드래그**하여 과거 데이터 탐색")
-                st.markdown("- 초기 화면: 최근 1년 반 데이터 표시")
-            else:
-                st.markdown("**📊 전체 데이터 표시 중**")
-                st.markdown("- 데이터가 1년 반 이하로 전체 기간을 한 번에 표시합니다")
         
         # 현재 수치 표시 (이동평균선일 때만)
         col1, col2 = st.columns([2, 1])
