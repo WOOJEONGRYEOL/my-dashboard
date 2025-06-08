@@ -389,19 +389,26 @@ def create_period_comparison_chart(df, channels, CHANNELS, comparison_type="최�
             ))
     
     fig.update_layout(
-        height=500,
+        height=550,  # 차트 높이 증가로 여유 공간 확보
         title=title,
         xaxis_title="기간",
         yaxis_title="시청률 (%)",
         barmode='group',
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend=dict(
+            orientation="h", 
+            yanchor="bottom", 
+            y=1.08,  # 범례를 더 위로 이동
+            xanchor="right", 
+            x=1
+        ),
         xaxis=dict(
             tickfont=dict(size=14)  # X축 폰트 크기 증가
         ),
         yaxis=dict(
             tickfont=dict(size=14)  # Y축 폰트 크기 증가
         ),
-        font=dict(size=12)  # 전체 폰트 크기 증가
+        font=dict(size=12),  # 전체 폰트 크기 증가
+        margin=dict(t=120)  # 상단 여백 증가
     )
     
     return fig
