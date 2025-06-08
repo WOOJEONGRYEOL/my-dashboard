@@ -12,15 +12,72 @@ from scipy import stats
 st.set_page_config(
     page_title="종편 4사 주중 메인 시청률 대시보드",
     page_icon="📺",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="auto"  # 자동 감지
 )
 
-# 한글 폰트 CSS
+# 디바이스 감지 및 최적화 CSS
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+    
     .main * {
         font-family: 'Noto Sans KR', sans-serif !important;
+    }
+    
+    /* PC 최적화 */
+    @media (min-width: 769px) {
+        .main .block-container {
+            padding-top: 2rem;
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+        .stPlotlyChart {
+            height: 500px !important;
+        }
+        .sidebar .block-container {
+            padding-top: 2rem;
+        }
+    }
+    
+    /* 모바일 최적화 (768px 이하) */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding: 1rem 0.5rem;
+        }
+        .stPlotlyChart {
+            height: 350px !important;
+        }
+        .stSelectbox label, .stRadio label, .stMultiselect label {
+            font-size: 14px !important;
+        }
+        .stButton button {
+            width: 100%;
+            font-size: 14px !important;
+        }
+        .stMetric {
+            background-color: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0;
+        }
+        .sidebar .block-container {
+            padding: 1rem 0.5rem;
+        }
+        /* 모바일에서 차트 범례 위치 조정 */
+        .js-plotly-plot .plotly .legend {
+            font-size: 10px !important;
+        }
+    }
+    
+    /* 태블릿 최적화 (769px - 1024px) */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .main .block-container {
+            padding: 1.5rem 1rem;
+        }
+        .stPlotlyChart {
+            height: 450px !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -218,19 +275,6 @@ def create_moving_average_chart(df, channels, periods, CHANNELS):
                                     '날짜: %{x|%Y년 %m월 %d일}<br>시청률: %{y:.2f}%<extra></extra>'
                     ))
     
-    # 데이터 범위 확인 및 초기 표시 범위 설정
-    latest_date = df['date'].max()
-    total_days = (latest_date - df['date'].min()).days
-    
-    # 1년 반(540일) 이상이면 최근 1년 반만 초기 표시
-    if total_days > 540:
-        start_date = latest_date - pd.DateOffset(days=540)
-        initial_range = [start_date, latest_date]
-        show_rangeslider = True
-    else:
-        initial_range = None
-        show_rangeslider = False
-    
     fig.update_layout(
         height=500,
         xaxis_title="날짜",
@@ -241,15 +285,7 @@ def create_moving_average_chart(df, channels, periods, CHANNELS):
             dtick="M1",  # 1달 간격
             tickformat="%y.%m",  # yy.mm 형식
             type="date",
-            range=initial_range,  # 초기 표시 범위
-            rangeslider=dict(
-                visible=show_rangeslider,
-                thickness=0.08,
-                bgcolor="rgba(255,255,255,0.8)",  # 화이트 배경
-                bordercolor="rgba(200,200,200,0.5)",  # 연한 회색 테두리
-                borderwidth=1,
-                yaxis=dict(rangemode="match")  # 스크롤바 내부에 차트 표시 안함
-            ) if show_rangeslider else dict(visible=False)
+            rangeslider=dict(visible=False)  # 스크롤바 완전 제거
         )
     )
     
@@ -377,19 +413,6 @@ def create_scatter_chart(df, channels, CHANNELS):
                             '날짜: %{x}<br>시청률: %{y:.2f}%<extra></extra>'
             ))
     
-    # 데이터 범위 확인 및 초기 표시 범위 설정
-    latest_date = df['date'].max()
-    total_days = (latest_date - df['date'].min()).days
-    
-    # 1년 반(540일) 이상이면 최근 1년 반만 초기 표시
-    if total_days > 540:
-        start_date = latest_date - pd.DateOffset(days=540)
-        initial_range = [start_date, latest_date]
-        show_rangeslider = True
-    else:
-        initial_range = None
-        show_rangeslider = False
-    
     fig.update_layout(
         height=500,
         title="시청률 분포 산점도",
@@ -401,15 +424,7 @@ def create_scatter_chart(df, channels, CHANNELS):
             dtick="M1",  # 1달 간격
             tickformat="%y.%m",  # yy.mm 형식
             type="date",
-            range=initial_range,  # 초기 표시 범위
-            rangeslider=dict(
-                visible=show_rangeslider,
-                thickness=0.08,
-                bgcolor="rgba(255,255,255,0.8)",  # 화이트 배경
-                bordercolor="rgba(200,200,200,0.5)",  # 연한 회색 테두리
-                borderwidth=1,
-                yaxis=dict(rangemode="match")  # 스크롤바 내부에 차트 표시 안함
-            ) if show_rangeslider else dict(visible=False)
+            rangeslider=dict(visible=False)  # 스크롤바 완전 제거
         )
     )
     
