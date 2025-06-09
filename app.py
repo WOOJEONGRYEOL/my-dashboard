@@ -10,7 +10,7 @@ from scipy import stats
 
 # 페이지 설정
 st.set_page_config(
-    page_title="종편 4사 주중 메인뉴스 시청률 대시보드",
+    page_title="종편 4사 메인뉴스 시청률 대시보드",
     page_icon="📺",
     layout="wide",
     initial_sidebar_state="auto"  # 자동 감지
