@@ -10,7 +10,7 @@ from scipy import stats
 
 # 페이지 설정
 st.set_page_config(
-    page_title="종편 4사 메인뉴스 시청률 대시보드",
+    page_title="종편 4사 주중 메인 시청률 대시보드",
     page_icon="📺",
     layout="wide",
     initial_sidebar_state="auto"  # 자동 감지
@@ -82,7 +82,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📺 종편 4사 메인시청률 대시보드")
+st.title("📺 종편 4사 메인뉴스 시청률 대시보드")
 st.markdown("---")
 
 # 데이터 로딩 함수
@@ -458,7 +458,7 @@ def create_scatter_chart(df, channels, CHANNELS):
     return fig
 
 # 요일별 시청률 막대그래프
-def create_weekday_chart(df, channels, CHANNELS, period_type="전체"):
+def create_weekday_chart(df, channels, CHANNELS, period_type="전체", day_filter="(주중+주말)"):
     # 기간별 데이터 필터링
     latest_date = df['date'].max()
     
@@ -484,9 +484,16 @@ def create_weekday_chart(df, channels, CHANNELS, period_type="전체"):
     df_weekday = filtered_df.copy()
     df_weekday['weekday_name'] = df_weekday['date'].dt.day_name()
     
-    # 요일 순서 설정 (월~금)
-    weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-    weekday_korean = ['월요일', '화요일', '수요일', '목요일', '금요일']
+    # 요일 필터에 따른 요일 순서 설정
+    if day_filter == "주중":
+        weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        weekday_korean = ['월요일', '화요일', '수요일', '목요일', '금요일']
+    elif day_filter == "주말":
+        weekday_order = ['Saturday', 'Sunday']
+        weekday_korean = ['토요일', '일요일']
+    else:  # "(주중+주말)"
+        weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        weekday_korean = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일']
     
     fig = go.Figure()
     
@@ -515,7 +522,7 @@ def create_weekday_chart(df, channels, CHANNELS, period_type="전체"):
     
     fig.update_layout(
         height=500,
-        title=f"요일별 평균 시청률 ({period_type})",
+        title=f"요일별 평균 시청률 ({period_type}) - {day_filter}",
         xaxis_title="요일",
         yaxis_title="시청률 (%)",
         barmode='group',
@@ -882,12 +889,8 @@ if channels and not filtered_df.empty:
     elif chart_type == "요일별 시청률 비교":
         st.subheader(f"📊 {rating_type} 요일별 시청률 비교")
         if channels:
-            # 주중/주말 필터링이 적용된 상태에서는 요일별 분석이 제한적일 수 있음을 알림
-            if day_type != "(주중+주말)":
-                st.info(f"현재 {day_type} 데이터만 분석 중입니다. 전체 요일 패턴을 보려면 '(주중+주말)'을 선택하세요.")
-            
-            # 원본 데이터를 사용 (요일별 분석은 전체 데이터 기준)
-            fig = create_weekday_chart(df, channels, CHANNELS, period_type)
+            # 원본 데이터를 사용하되, 현재 선택된 요일 필터를 차트에 반영
+            fig = create_weekday_chart(df, channels, CHANNELS, period_type, day_type)
             st.plotly_chart(fig, use_container_width=True)
             
             # 요일별 패턴 분석
@@ -918,14 +921,21 @@ if channels and not filtered_df.empty:
             analysis_df = analysis_df.copy()
             analysis_df['weekday_name'] = analysis_df['date'].dt.day_name()
             
-            # 요일 순서 설정
-            weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-            weekday_korean = ['월요일', '화요일', '수요일', '목요일', '금요일']
+            # 선택된 요일 필터에 따른 요일 순서 설정
+            if day_type == "주중":
+                weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+                weekday_korean = ['월요일', '화요일', '수요일', '목요일', '금요일']
+            elif day_type == "주말":
+                weekday_order = ['Saturday', 'Sunday']
+                weekday_korean = ['토요일', '일요일']
+            else:  # "(주중+주말)"
+                weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                weekday_korean = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일']
             
             col1, col2 = st.columns(2)
             
             with col1:
-                st.markdown(f"**📊 {period_type} 요일별 평균 시청률**")
+                st.markdown(f"**📊 {period_type} 요일별 평균 시청률 ({day_type})**")
                 
                 # 전체 방송사 평균 계산
                 all_channels_avg = {}
@@ -949,11 +959,13 @@ if channels and not filtered_df.empty:
                                 st.error(f"{day_kor}: {avg_val:.2f}% 📉 (최저)")
                             else:
                                 st.info(f"{day_kor}: {avg_val:.2f}%")
+                        else:
+                            st.write(f"{day_kor}: 데이터 없음")
             
             with col2:
                 st.markdown("**💡 패턴 해석**")
                 
-                if all_channels_avg:
+                if all_channels_avg and len(all_channels_avg) > 1:
                     st.markdown(f"- **최고 시청률**: {max_day}")
                     st.markdown(f"- **최저 시청률**: {min_day}")
                     
@@ -967,10 +979,16 @@ if channels and not filtered_df.empty:
                         st.markdown(f"- **변동성**: 보통 ({variation:.1f}%)")
                     else:
                         st.markdown(f"- **변동성**: 낮음 ({variation:.1f}%)")
-                    
-                    st.markdown(f"- **분석 기간**: {period_type}")
-                    if period_type != "전체":
-                        st.markdown(f"- **데이터 기간**: {start_date.strftime('%Y.%m.%d')} ~ {latest_date.strftime('%Y.%m.%d')}")
+                        
+                elif len(all_channels_avg) == 1:
+                    st.markdown("- **단일 요일**: 비교 대상이 없어 변동성 계산 불가")
+                else:
+                    st.markdown("- **데이터 부족**: 분석할 데이터가 없습니다")
+                
+                st.markdown(f"- **분석 대상**: {day_type}")
+                st.markdown(f"- **분석 기간**: {period_type}")
+                if period_type != "전체":
+                    st.markdown(f"- **데이터 기간**: {start_date.strftime('%Y.%m.%d')} ~ {latest_date.strftime('%Y.%m.%d')}")
         else:
             st.warning("방송사를 선택해주세요.")
         
