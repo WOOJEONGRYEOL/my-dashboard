@@ -10,7 +10,7 @@ from scipy import stats
 
 # 페이지 설정
 st.set_page_config(
-    page_title="종편 4사 주중 메인 시청률 대시보드",
+    page_title="종편 4사 메인뉴스 시청률 대시보드",
     page_icon="📺",
     layout="wide",
     initial_sidebar_state="auto"  # 자동 감지
@@ -47,6 +47,9 @@ st.markdown("""
         }
         .stPlotlyChart {
             height: 350px !important;
+            width: 100% !important;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .stSelectbox label, .stRadio label, .stMultiselect label {
             font-size: 14px !important;
@@ -67,6 +70,52 @@ st.markdown("""
         /* 모바일에서 차트 범례 위치 조정 */
         .js-plotly-plot .plotly .legend {
             font-size: 10px !important;
+        }
+        /* 모바일에서 차트 터치 조작 활성화 */
+        .js-plotly-plot .plotly {
+            touch-action: pan-x pan-y;
+        }
+        /* 모바일에서 X축 날짜 표시 최적화 */
+        .js-plotly-plot .plotly .xtick text {
+            font-size: 10px !important;
+            transform: rotate(0deg) !important;
+        }
+        .js-plotly-plot .plotly .xaxislayer-above .xtick text {
+            font-size: 10px !important;
+        }
+        /* 모바일에서 날짜 입력 최적화 */
+        .stDateInput > div {
+            width: 100% !important;
+        }
+        .stDateInput input {
+            font-size: 16px !important;
+            padding: 12px !important;
+            width: 100% !important;
+        }
+        /* 모바일에서 체크박스 크기 최적화 */
+        .stCheckbox > div {
+            padding: 8px 0 !important;
+        }
+        .stCheckbox label {
+            font-size: 16px !important;
+            font-weight: 500 !important;
+        }
+    }
+    
+    /* 모바일 가로 화면 최적화 (가로 768px 이하, 세로 480px 이하) */
+    @media (max-width: 768px) and (orientation: landscape) {
+        .main .block-container {
+            padding: 0.5rem;
+        }
+        .stPlotlyChart {
+            height: 280px !important;
+            width: 100% !important;
+        }
+        .sidebar .block-container {
+            padding: 0.5rem;
+        }
+        .js-plotly-plot .plotly .xtick text {
+            font-size: 9px !important;
         }
     }
     
@@ -287,15 +336,36 @@ def create_moving_average_chart(df, channels, periods, CHANNELS):
             tickformat="%y.%m",  # yy.mm 형식
             type="date",
             rangeslider=dict(visible=False),  # 스크롤바 완전 제거
-            tickfont=dict(size=14)  # X축 폰트 크기 증가
+            tickfont=dict(size=14),  # X축 폰트 크기 증가
+            tickangle=0,  # PC에서는 수평 표시
+            tickmode='auto',
+            nticks=6  # 최대 6개 눈금으로 제한
         ),
         yaxis=dict(
             tickfont=dict(size=14)  # Y축 폰트 크기 증가
         ),
-        font=dict(size=12)  # 전체 폰트 크기 증가
+        font=dict(size=12),  # 전체 폰트 크기 증가
+        dragmode='pan',  # 모바일 터치 드래그 활성화
+        margin=dict(b=80)  # 하단 여백 증가로 X축 텍스트 공간 확보
     )
     
-    return fig
+    # PC와 모바일 모두에서 사용할 수 있는 config
+    config = {
+        'scrollZoom': True,  # PC에서는 스크롤 줌, 모바일에서는 터치 드래그
+        'doubleClick': 'reset',  # PC에서는 더블클릭 리셋, 모바일에서는 더블탭 리셋
+        'showTips': False,
+        'displayModeBar': 'hover',  # 호버시에만 툴바 표시
+        'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
+        'toImageButtonOptions': {
+            'format': 'png',
+            'filename': 'chart',
+            'height': 500,
+            'width': 800,
+            'scale': 1
+        }
+    }
+    
+    return fig, config
 
 # 동기간 비교 차트 (기간 평균 방식)
 def create_period_comparison_chart(df, channels, CHANNELS, comparison_type="최근 6개월", custom_dates=None):
@@ -402,13 +472,14 @@ def create_period_comparison_chart(df, channels, CHANNELS, comparison_type="최�
             x=1
         ),
         xaxis=dict(
-            tickfont=dict(size=14)  # X축 폰트 크기 증가
+            tickfont=dict(size=14),  # X축 폰트 크기 증가
+            tickangle=0  # 모바일에서도 수평 표시
         ),
         yaxis=dict(
             tickfont=dict(size=14)  # Y축 폰트 크기 증가
         ),
         font=dict(size=12),  # 전체 폰트 크기 증가
-        margin=dict(t=120)  # 상단 여백 증가
+        margin=dict(t=120, b=60)  # 상단, 하단 여백 증가
     )
     
     return fig
@@ -447,15 +518,36 @@ def create_scatter_chart(df, channels, CHANNELS):
             tickformat="%y.%m",  # yy.mm 형식
             type="date",
             rangeslider=dict(visible=False),  # 스크롤바 완전 제거
-            tickfont=dict(size=14)  # X축 폰트 크기 증가
+            tickfont=dict(size=14),  # X축 폰트 크기 증가
+            tickangle=0,  # PC에서는 수평 표시
+            tickmode='auto',
+            nticks=6  # 최대 6개 눈금으로 제한
         ),
         yaxis=dict(
             tickfont=dict(size=14)  # Y축 폰트 크기 증가
         ),
-        font=dict(size=12)  # 전체 폰트 크기 증가
+        font=dict(size=12),  # 전체 폰트 크기 증가
+        dragmode='pan',  # 모바일 터치 드래그 활성화
+        margin=dict(b=80)  # 하단 여백 증가로 X축 텍스트 공간 확보
     )
     
-    return fig
+    # PC와 모바일 모두에서 사용할 수 있는 config
+    config = {
+        'scrollZoom': True,  # PC에서는 스크롤 줌, 모바일에서는 터치 드래그
+        'doubleClick': 'reset',  # PC에서는 더블클릭 리셋, 모바일에서는 더블탭 리셋
+        'showTips': False,
+        'displayModeBar': 'hover',  # 호버시에만 툴바 표시
+        'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
+        'toImageButtonOptions': {
+            'format': 'png',
+            'filename': 'chart',
+            'height': 500,
+            'width': 800,
+            'scale': 1
+        }
+    }
+    
+    return fig, config
 
 # 요일별 시청률 막대그래프
 def create_weekday_chart(df, channels, CHANNELS, period_type="전체", day_filter="(주중+주말)"):
@@ -528,12 +620,14 @@ def create_weekday_chart(df, channels, CHANNELS, period_type="전체", day_filte
         barmode='group',
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         xaxis=dict(
-            tickfont=dict(size=14)  # X축 폰트 크기 증가
+            tickfont=dict(size=14),  # X축 폰트 크기 증가
+            tickangle=0  # 요일은 항상 수평 표시
         ),
         yaxis=dict(
             tickfont=dict(size=14)  # Y축 폰트 크기 증가
         ),
-        font=dict(size=12)  # 전체 폰트 크기 증가
+        font=dict(size=12),  # 전체 폰트 크기 증가
+        margin=dict(b=60)  # 하단 여백 증가
     )
     
     return fig
@@ -581,12 +675,15 @@ def create_correlation_analysis(df, channels, analysis_period=None, custom_analy
     fig.update_layout(
         height=400,
         xaxis=dict(
-            tickfont=dict(size=12)
+            tickfont=dict(size=12),  # X축 폰트 크기 증가
+            tickangle=0  # 방송사명 수평 표시
         ),
         yaxis=dict(
-            tickfont=dict(size=12)
+            tickfont=dict(size=12),  # Y축 폰트 크기 증가
+            tickangle=0  # 방송사명 수평 표시
         ),
-        font=dict(size=12)
+        font=dict(size=12),  # 전체 폰트 크기 증가
+        margin=dict(b=80, l=100)  # 하단, 좌측 여백 증가
     )
     
     # 모든 상관관계 수치를 담은 데이터프레임 생성
@@ -703,21 +800,26 @@ with st.sidebar:
             min_date = loading_info['date_range'][0].date()
             max_date = loading_info['date_range'][1].date()
             
-            col1, col2 = st.columns(2)
-            with col1:
-                start_date = st.date_input(
-                    "시작일",
-                    value=max_date - timedelta(days=90),
-                    min_value=min_date,
-                    max_value=max_date
-                )
-            with col2:
-                end_date = st.date_input(
-                    "종료일",
-                    value=max_date,
-                    min_value=min_date,
-                    max_value=max_date
-                )
+            # 모바일 최적화: 세로로 배치
+            st.markdown("**시작일:**")
+            start_date = st.date_input(
+                "시작일",
+                value=max_date - timedelta(days=90),
+                min_value=min_date,
+                max_value=max_date,
+                label_visibility="collapsed",
+                help="비교 기간의 시작 날짜를 선택하세요"
+            )
+            
+            st.markdown("**종료일:**")
+            end_date = st.date_input(
+                "종료일",
+                value=max_date,
+                min_value=min_date,
+                max_value=max_date,
+                label_visibility="collapsed",
+                help="비교 기간의 종료 날짜를 선택하세요"
+            )
             
             # 선택한 날짜가 데이터 범위를 벗어나는지 확인
             if start_date < min_date or end_date > max_date or start_date > end_date:
@@ -762,23 +864,28 @@ with st.sidebar:
             min_date = loading_info['date_range'][0].date()
             max_date = loading_info['date_range'][1].date()
             
-            col1, col2 = st.columns(2)
-            with col1:
-                analysis_start_date = st.date_input(
-                    "분석 시작일",
-                    value=max_date - timedelta(days=90),
-                    min_value=min_date,
-                    max_value=max_date,
-                    key="analysis_start"
-                )
-            with col2:
-                analysis_end_date = st.date_input(
-                    "분석 종료일",
-                    value=max_date,
-                    min_value=min_date,
-                    max_value=max_date,
-                    key="analysis_end"
-                )
+            # 모바일 최적화: 세로로 배치
+            st.markdown("**분석 시작일:**")
+            analysis_start_date = st.date_input(
+                "분석 시작일",
+                value=max_date - timedelta(days=90),
+                min_value=min_date,
+                max_value=max_date,
+                key="analysis_start",
+                label_visibility="collapsed",
+                help="상관관계 분석 시작 날짜를 선택하세요"
+            )
+            
+            st.markdown("**분석 종료일:**")
+            analysis_end_date = st.date_input(
+                "분석 종료일",
+                value=max_date,
+                min_value=min_date,
+                max_value=max_date,
+                key="analysis_end",
+                label_visibility="collapsed",
+                help="상관관계 분석 종료 날짜를 선택하세요"
+            )
             
             # 선택한 날짜가 데이터 범위를 벗어나는지 확인
             if analysis_start_date < min_date or analysis_end_date > max_date or analysis_start_date > analysis_end_date:
@@ -828,8 +935,8 @@ with st.sidebar:
 if channels and not filtered_df.empty:
     if chart_type == "이동평균선" and periods:
         st.subheader(f"📈 {rating_type} 이동평균선 ({day_type})")
-        fig = create_moving_average_chart(filtered_df, channels, periods, CHANNELS)
-        st.plotly_chart(fig, use_container_width=True)
+        fig, config = create_moving_average_chart(filtered_df, channels, periods, CHANNELS)
+        st.plotly_chart(fig, use_container_width=True, config=config)
         
         # 현재 수치 표시 (이동평균선일 때만)
         col1, col2 = st.columns([2, 1])
@@ -867,6 +974,15 @@ if channels and not filtered_df.empty:
             st.markdown("- **실선**: 30일 이동평균")
             st.markdown("- **대시선**: 90일 이동평균")
             st.markdown("- **점선**: 180일 이동평균")
+            
+            # 디바이스별 조작 가이드
+            st.markdown("**🖥️ PC 조작:**")
+            st.markdown("- **마우스 드래그**: 차트 이동")
+            st.markdown("- **스크롤 휠**: 확대/축소")
+            st.markdown("- **더블클릭**: 원래 크기")
+            st.markdown("**📱 모바일 조작:**")
+            st.markdown("- **터치 드래그**: 차트 이동")
+            st.markdown("- **좌우 스와이프**: 시간축 탐색")
         
     elif chart_type == "동기간 비교":
         st.subheader(f"📊 {rating_type} 동기간 비교 ({day_type})")
@@ -883,8 +999,21 @@ if channels and not filtered_df.empty:
         
     elif chart_type == "시청률 분포 산점도":
         st.subheader(f"🔸 {rating_type} 시청률 분포 산점도 ({day_type})")
-        fig = create_scatter_chart(filtered_df, channels, CHANNELS)
-        st.plotly_chart(fig, use_container_width=True)
+        fig, config = create_scatter_chart(filtered_df, channels, CHANNELS)
+        st.plotly_chart(fig, use_container_width=True, config=config)
+        
+        # 디바이스별 조작 가이드
+        with st.expander("🎮 조작 가이드"):
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**🖥️ PC:**")
+                st.markdown("- **마우스 드래그**: 차트 이동")
+                st.markdown("- **스크롤 휠**: 확대/축소")
+                st.markdown("- **더블클릭**: 원래 크기")
+            with col2:
+                st.markdown("**📱 모바일:**")
+                st.markdown("- **터치 드래그**: 차트 이동")
+                st.markdown("- **좌우 스와이프**: 시간축 탐색")
         
     elif chart_type == "요일별 시청률 비교":
         st.subheader(f"📊 {rating_type} 요일별 시청률 비교")
