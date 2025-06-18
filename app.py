@@ -350,13 +350,45 @@ def create_moving_average_chart(df, channels, periods, CHANNELS):
         margin=dict(b=80)  # 하단 여백 증가로 X축 텍스트 공간 확보
     )
     
-    # 모바일 전용: 터치 드래그만, 확대/축소 없음
+    # 디바이스별 config 설정을 위한 JavaScript 추가
+    st.markdown("""
+    <script>
+    // 모바일 디바이스 감지
+    function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+    }
+    
+    // Plotly config를 디바이스별로 설정
+    window.addEventListener('DOMContentLoaded', function() {
+        const plotlyCharts = document.querySelectorAll('.js-plotly-plot');
+        plotlyCharts.forEach(function(chart) {
+            if (isMobileDevice()) {
+                // 모바일: 확대/축소 비활성화, 터치 드래그만
+                if (chart._plotly_config) {
+                    chart._plotly_config.scrollZoom = false;
+                    chart._plotly_config.doubleClick = false;
+                    chart._plotly_config.displayModeBar = false;
+                }
+            } else {
+                // PC: 모든 기능 활성화
+                if (chart._plotly_config) {
+                    chart._plotly_config.scrollZoom = true;
+                    chart._plotly_config.doubleClick = 'reset';
+                    chart._plotly_config.displayModeBar = 'hover';
+                }
+            }
+        });
+    });
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # 기본 config (PC 기준으로 설정, JS에서 모바일 시 변경됨)
     config = {
-        'scrollZoom': False,  # 모바일에서 스크롤 줌 비활성화
-        'doubleClick': False,  # 모바일에서 더블클릭 줌 비활성화
+        'scrollZoom': True,  # PC: 스크롤 줌 활성화
+        'doubleClick': 'reset',  # PC: 더블클릭 리셋
         'showTips': False,
-        'displayModeBar': False,  # 모바일에서 툴바 완전 숨김
-        'modeBarButtonsToRemove': ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d'],
+        'displayModeBar': 'hover',  # PC: 호버시 툴바 표시
+        'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
         'toImageButtonOptions': {
             'format': 'png',
             'filename': 'chart',
@@ -534,13 +566,13 @@ def create_scatter_chart(df, channels, CHANNELS):
         margin=dict(b=80)  # 하단 여백 증가로 X축 텍스트 공간 확보
     )
     
-    # 모바일 전용: 터치 드래그만, 확대/축소 없음
+    # 기본 config (PC 기준으로 설정, JS에서 모바일 시 변경됨)
     config = {
-        'scrollZoom': False,  # 모바일에서 스크롤 줌 비활성화
-        'doubleClick': False,  # 모바일에서 더블클릭 줌 비활성화
+        'scrollZoom': True,  # PC: 스크롤 줌 활성화
+        'doubleClick': 'reset',  # PC: 더블클릭 리셋
         'showTips': False,
-        'displayModeBar': False,  # 모바일에서 툴바 완전 숨김
-        'modeBarButtonsToRemove': ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d'],
+        'displayModeBar': 'hover',  # PC: 호버시 툴바 표시
+        'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
         'toImageButtonOptions': {
             'format': 'png',
             'filename': 'chart',
@@ -979,7 +1011,12 @@ if channels and not filtered_df.empty:
             st.markdown("- **대시선**: 90일 이동평균")
             st.markdown("- **점선**: 180일 이동평균")
             
-            # 모바일 터치 가이드
+            # 디바이스별 조작 가이드
+            st.markdown("**🖥️ PC 조작:**")
+            st.markdown("- **마우스 드래그**: 차트 이동")
+            st.markdown("- **스크롤 휠**: 확대/축소")
+            st.markdown("- **더블클릭**: 원래 크기")
+            st.markdown("- **툴바**: 호버시 표시")
             st.markdown("**📱 모바일 조작:**")
             st.markdown("- **터치 드래그**: 차트 이동")
             st.markdown("- **좌우 스와이프**: 시간축 탐색")
@@ -1003,12 +1040,20 @@ if channels and not filtered_df.empty:
         fig, config = create_scatter_chart(filtered_df, channels, CHANNELS)
         st.plotly_chart(fig, use_container_width=True, config=config)
         
-        # 모바일 터치 가이드
-        with st.expander("📱 모바일 조작 가이드"):
-            st.markdown("**터치 조작:**")
-            st.markdown("- **터치 드래그**: 차트를 좌우로 이동")
-            st.markdown("- **좌우 스와이프**: 시간축 탐색")
-            st.markdown("- **확대/축소**: 비활성화 (단순 탐색)")
+        # 디바이스별 조작 가이드
+        with st.expander("🎮 조작 가이드"):
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**🖥️ PC:**")
+                st.markdown("- **마우스 드래그**: 차트 이동")
+                st.markdown("- **스크롤 휠**: 확대/축소")
+                st.markdown("- **더블클릭**: 원래 크기")
+                st.markdown("- **툴바**: 호버시 표시")
+            with col2:
+                st.markdown("**📱 모바일:**")
+                st.markdown("- **터치 드래그**: 차트 이동")
+                st.markdown("- **좌우 스와이프**: 시간축 탐색")
+                st.markdown("- **확대/축소**: 비활성화")
         
     elif chart_type == "요일별 시청률 비교":
         st.subheader(f"📊 {rating_type} 요일별 시청률 비교")
