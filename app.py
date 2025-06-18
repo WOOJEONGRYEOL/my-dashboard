@@ -343,7 +343,8 @@ def create_moving_average_chart(df, channels, periods, CHANNELS):
         ),
         yaxis=dict(
             tickfont=dict(size=14),  # Y축 폰트 크기 증가
-            rangemode='tozero'  # Y축 0부터 시작 (마이너스 제거)
+            rangemode='tozero',  # Y축 0부터 시작 (마이너스 제거)
+            range=[0, None]  # 0부터 시작하도록 강제 설정
         ),
         font=dict(size=12),  # 전체 폰트 크기 증가
         dragmode='pan',  # 모바일 터치 드래그 활성화
@@ -369,12 +370,22 @@ def create_moving_average_chart(df, channels, periods, CHANNELS):
                     chart._plotly_config.doubleClick = false;
                     chart._plotly_config.displayModeBar = false;
                 }
+                // 모바일: X축 간격을 3개월로 변경
+                if (chart.layout && chart.layout.xaxis) {
+                    chart.layout.xaxis.dtick = "M3";
+                    Plotly.redraw(chart);
+                }
             } else {
                 // PC: 모든 기능 활성화
                 if (chart._plotly_config) {
                     chart._plotly_config.scrollZoom = true;
                     chart._plotly_config.doubleClick = 'reset';
                     chart._plotly_config.displayModeBar = 'hover';
+                }
+                // PC: X축 간격을 1개월로 설정
+                if (chart.layout && chart.layout.xaxis) {
+                    chart.layout.xaxis.dtick = "M1";
+                    Plotly.redraw(chart);
                 }
             }
         });
@@ -510,7 +521,8 @@ def create_period_comparison_chart(df, channels, CHANNELS, comparison_type="최�
         ),
         yaxis=dict(
             tickfont=dict(size=14),  # Y축 폰트 크기 증가
-            rangemode='tozero'  # Y축 0부터 시작 (마이너스 제거)
+            rangemode='tozero',  # Y축 0부터 시작 (마이너스 제거)
+            range=[0, None]  # 0부터 시작하도록 강제 설정
         ),
         font=dict(size=12),  # 전체 폰트 크기 증가
         margin=dict(t=120, b=60)  # 상단, 하단 여백 증가
@@ -559,7 +571,8 @@ def create_scatter_chart(df, channels, CHANNELS):
         ),
         yaxis=dict(
             tickfont=dict(size=14),  # Y축 폰트 크기 증가
-            rangemode='tozero'  # Y축 0부터 시작 (마이너스 제거)
+            rangemode='tozero',  # Y축 0부터 시작 (마이너스 제거)
+            range=[0, None]  # 0부터 시작하도록 강제 설정
         ),
         font=dict(size=12),  # 전체 폰트 크기 증가
         dragmode='pan',  # 모바일 터치 드래그 활성화
@@ -660,7 +673,8 @@ def create_weekday_chart(df, channels, CHANNELS, period_type="전체", day_filte
         ),
         yaxis=dict(
             tickfont=dict(size=14),  # Y축 폰트 크기 증가
-            rangemode='tozero'  # Y축 0부터 시작 (마이너스 제거)
+            rangemode='tozero',  # Y축 0부터 시작 (마이너스 제거)
+            range=[0, None]  # 0부터 시작하도록 강제 설정
         ),
         font=dict(size=12),  # 전체 폰트 크기 증가
         margin=dict(b=60)  # 하단 여백 증가
