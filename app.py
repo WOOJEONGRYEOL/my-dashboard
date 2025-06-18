@@ -342,20 +342,21 @@ def create_moving_average_chart(df, channels, periods, CHANNELS):
             nticks=6  # 최대 6개 눈금으로 제한
         ),
         yaxis=dict(
-            tickfont=dict(size=14)  # Y축 폰트 크기 증가
+            tickfont=dict(size=14),  # Y축 폰트 크기 증가
+            rangemode='tozero'  # Y축 0부터 시작 (마이너스 제거)
         ),
         font=dict(size=12),  # 전체 폰트 크기 증가
         dragmode='pan',  # 모바일 터치 드래그 활성화
         margin=dict(b=80)  # 하단 여백 증가로 X축 텍스트 공간 확보
     )
     
-    # PC와 모바일 모두에서 사용할 수 있는 config
+    # 모바일 전용: 터치 드래그만, 확대/축소 없음
     config = {
-        'scrollZoom': True,  # PC에서는 스크롤 줌, 모바일에서는 터치 드래그
-        'doubleClick': 'reset',  # PC에서는 더블클릭 리셋, 모바일에서는 더블탭 리셋
+        'scrollZoom': False,  # 모바일에서 스크롤 줌 비활성화
+        'doubleClick': False,  # 모바일에서 더블클릭 줌 비활성화
         'showTips': False,
-        'displayModeBar': 'hover',  # 호버시에만 툴바 표시
-        'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
+        'displayModeBar': False,  # 모바일에서 툴바 완전 숨김
+        'modeBarButtonsToRemove': ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d'],
         'toImageButtonOptions': {
             'format': 'png',
             'filename': 'chart',
@@ -476,7 +477,8 @@ def create_period_comparison_chart(df, channels, CHANNELS, comparison_type="최�
             tickangle=0  # 모바일에서도 수평 표시
         ),
         yaxis=dict(
-            tickfont=dict(size=14)  # Y축 폰트 크기 증가
+            tickfont=dict(size=14),  # Y축 폰트 크기 증가
+            rangemode='tozero'  # Y축 0부터 시작 (마이너스 제거)
         ),
         font=dict(size=12),  # 전체 폰트 크기 증가
         margin=dict(t=120, b=60)  # 상단, 하단 여백 증가
@@ -524,20 +526,21 @@ def create_scatter_chart(df, channels, CHANNELS):
             nticks=6  # 최대 6개 눈금으로 제한
         ),
         yaxis=dict(
-            tickfont=dict(size=14)  # Y축 폰트 크기 증가
+            tickfont=dict(size=14),  # Y축 폰트 크기 증가
+            rangemode='tozero'  # Y축 0부터 시작 (마이너스 제거)
         ),
         font=dict(size=12),  # 전체 폰트 크기 증가
         dragmode='pan',  # 모바일 터치 드래그 활성화
         margin=dict(b=80)  # 하단 여백 증가로 X축 텍스트 공간 확보
     )
     
-    # PC와 모바일 모두에서 사용할 수 있는 config
+    # 모바일 전용: 터치 드래그만, 확대/축소 없음
     config = {
-        'scrollZoom': True,  # PC에서는 스크롤 줌, 모바일에서는 터치 드래그
-        'doubleClick': 'reset',  # PC에서는 더블클릭 리셋, 모바일에서는 더블탭 리셋
+        'scrollZoom': False,  # 모바일에서 스크롤 줌 비활성화
+        'doubleClick': False,  # 모바일에서 더블클릭 줌 비활성화
         'showTips': False,
-        'displayModeBar': 'hover',  # 호버시에만 툴바 표시
-        'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
+        'displayModeBar': False,  # 모바일에서 툴바 완전 숨김
+        'modeBarButtonsToRemove': ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d'],
         'toImageButtonOptions': {
             'format': 'png',
             'filename': 'chart',
@@ -624,7 +627,8 @@ def create_weekday_chart(df, channels, CHANNELS, period_type="전체", day_filte
             tickangle=0  # 요일은 항상 수평 표시
         ),
         yaxis=dict(
-            tickfont=dict(size=14)  # Y축 폰트 크기 증가
+            tickfont=dict(size=14),  # Y축 폰트 크기 증가
+            rangemode='tozero'  # Y축 0부터 시작 (마이너스 제거)
         ),
         font=dict(size=12),  # 전체 폰트 크기 증가
         margin=dict(b=60)  # 하단 여백 증가
@@ -975,14 +979,11 @@ if channels and not filtered_df.empty:
             st.markdown("- **대시선**: 90일 이동평균")
             st.markdown("- **점선**: 180일 이동평균")
             
-            # 디바이스별 조작 가이드
-            st.markdown("**🖥️ PC 조작:**")
-            st.markdown("- **마우스 드래그**: 차트 이동")
-            st.markdown("- **스크롤 휠**: 확대/축소")
-            st.markdown("- **더블클릭**: 원래 크기")
+            # 모바일 터치 가이드
             st.markdown("**📱 모바일 조작:**")
             st.markdown("- **터치 드래그**: 차트 이동")
             st.markdown("- **좌우 스와이프**: 시간축 탐색")
+            st.markdown("- **확대/축소**: 비활성화 (단순 탐색)")
         
     elif chart_type == "동기간 비교":
         st.subheader(f"📊 {rating_type} 동기간 비교 ({day_type})")
@@ -1002,18 +1003,12 @@ if channels and not filtered_df.empty:
         fig, config = create_scatter_chart(filtered_df, channels, CHANNELS)
         st.plotly_chart(fig, use_container_width=True, config=config)
         
-        # 디바이스별 조작 가이드
-        with st.expander("🎮 조작 가이드"):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("**🖥️ PC:**")
-                st.markdown("- **마우스 드래그**: 차트 이동")
-                st.markdown("- **스크롤 휠**: 확대/축소")
-                st.markdown("- **더블클릭**: 원래 크기")
-            with col2:
-                st.markdown("**📱 모바일:**")
-                st.markdown("- **터치 드래그**: 차트 이동")
-                st.markdown("- **좌우 스와이프**: 시간축 탐색")
+        # 모바일 터치 가이드
+        with st.expander("📱 모바일 조작 가이드"):
+            st.markdown("**터치 조작:**")
+            st.markdown("- **터치 드래그**: 차트를 좌우로 이동")
+            st.markdown("- **좌우 스와이프**: 시간축 탐색")
+            st.markdown("- **확대/축소**: 비활성화 (단순 탐색)")
         
     elif chart_type == "요일별 시청률 비교":
         st.subheader(f"📊 {rating_type} 요일별 시청률 비교")
